@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-collabora
+  labels:
+    app: nextcloud
+spec:
+  ports:
+  - port: 9980
+    name: collabora-port
+    protocol: TCP
+  type: ClusterIP
+  selector:
+    app: nextcloud
+    tier: collabora
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nextcloud-collabora
+  labels:
+    app: nextcloud
+spec:
+  selector:
+    matchLabels:
+      app: nextcloud
+      tier: collabora
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+        tier: collabora
+    spec:
+      containers:
+      - image: collabora/code
+        name: collabora
+        ports:
+        - containerPort: 9980
+          name: collabora
+        securityContext:
+          capabilities:
+            add:
+            - MKNOD

@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql
+  labels:
+    app: nextcloud
+data:
+  my.cnf: |
+    # Apply this config only on the master.
+    [mysqld]
+    innodb_large_prefix=on
+    innodb_file_format=barracuda
+    innodb_file_per_table=true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-mysql
+  labels:
+    app: nextcloud
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: nextcloud
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: nextcloud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nextcloud-mysql
+  labels:
+    app: nextcloud
+spec:
+  selector:
+    matchLabels:
+      app: nextcloud
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+        - name: config-map
+          mountPath: /etc/mysql/conf.d
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - bash
+              - "-c"
+              - | 
+                sleep 15
+                if [ ! -d /var/lib/mysql/nextcloud ] ; then
+                  sleep 5
+                  mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+                  mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON nextcloud.* to 'nextcloud'@'%' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';"
+                  mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES"
+                fi
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+      - name: config-map
+        configMap:
+          name: mysql
+
