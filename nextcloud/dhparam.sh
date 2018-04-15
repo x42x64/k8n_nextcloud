@@ -28,7 +28,7 @@ cat >dhparam-nginx.yaml <<EOL
 		            "name": "dhparam-nginx"
 			        },
 				    "data": {
-				            "dhparam.pem": "$(cat ./dhparam.pem | base64)"
+				            "dhparam.pem": "$(cat ./dhparam.pem | base64 -w 0)"
 					        }
 }
 EOL

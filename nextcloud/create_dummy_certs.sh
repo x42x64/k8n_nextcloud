@@ -9,8 +9,8 @@ cat >certs.yaml <<EOL
 		"name": "nextcloud-cert"
 		},
 	"data": {
-		"privkey.pem": "$(cat ./privkey.pem | base64)",
-		"fullchain.pem": "$(cat ./fullchain.pem)"
+		"privkey.pem": "$(cat ./privkey.pem | base64 -w 0)",
+		"fullchain.pem": "$(cat ./fullchain.pem | base64 -w 0)"
 		}
 }
 EOL
