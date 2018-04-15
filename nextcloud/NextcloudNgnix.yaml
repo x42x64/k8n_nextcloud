@@ -383,7 +383,7 @@ spec:
         emptyDir: {}
       - name: nginx-certs
         secret:
-          secretName: domain-cert
+          secretName: nextcloud-cert
       - name: dhparam
         secret:
-          secretName: dhparam
+          secretName: dhparam-nginx
