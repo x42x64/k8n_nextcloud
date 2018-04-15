@@ -20,15 +20,17 @@
 # https://wiki.mozilla.org/Security/Server_Side_TLS#DHE_handshake_and_dhparam
 openssl dhparam -out dhparam.pem 4096
 
-cat <<EOF > dhparam-example.yaml
+cat >dhparam-nginx.yaml <<EOL
 {
 	    "kind": "Secret",
 	        "apiVersion": "v1",
 		    "metadata": {
-		            "name": "dhparam-example"
+		            "name": "dhparam-nginx"
 			        },
 				    "data": {
 				            "dhparam.pem": "$(cat ./dhparam.pem | base64)"
 					        }
-					}
-					EOF
+}
+EOL
+
+rm dhparam.pem
