@@ -35,3 +35,7 @@ cat >dhparam-nginx.yaml <<EOL
 EOL
 
 rm dhparam.pem
+
+kubectl apply -f dhparam-nginx.yaml
+
+rm dhparam-nginx.yaml

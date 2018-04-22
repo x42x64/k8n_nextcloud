@@ -1,2 +1,2 @@
 #/bin/bash
-kubectl -n ##__NAMESPACE__## create configmap nextcloud-config --from-file=nginx.conf
+kubectl -n ##__NAMESPACE__## create configmap nginx-config --from-file=nginx.conf
