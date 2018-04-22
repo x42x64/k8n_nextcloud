@@ -17,6 +17,7 @@ kubectl apply -f DbAllConfig.yaml
 
 cd ..
 cd nextcloud
+kubectl apply -f collabora.yaml
 ./create_admin_pw.sh
 ./dhparam.sh
 ./create_domain_certs.sh
