@@ -20,7 +20,7 @@ cd nextcloud
 ./create_admin_pw.sh
 ./dhparam.sh
 ./create_domain_certs.sh
-kubectl apply -f create_nginx_configmap.yaml
+./create_nginx_configmap.yaml
 kubectl apply -f create_pvc.yaml
 kubectl apply -f deployment.yaml
 kubectl apply -f create_nginx_service.yaml
