@@ -18,7 +18,7 @@
 # https://www.openssl.org/docs/manmaster/apps/dhparam.html
 # this command generates a key used to get "Perfect Forward Secrecy" in nginx
 # https://wiki.mozilla.org/Security/Server_Side_TLS#DHE_handshake_and_dhparam
-openssl dhparam -out dhparam.pem 4096
+openssl dhparam -out dhparam.pem 2048
 
 cat >dhparam-nginx.yaml <<EOL
 {
