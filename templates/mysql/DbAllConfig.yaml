@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql
+  namespace: ##__NAMESPACE__##
   labels:
     app: nextcloud
 data:
@@ -16,6 +17,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nextcloud-mysql
+  namespace: ##__NAMESPACE__##
   labels:
     app: nextcloud
 spec:
@@ -30,6 +32,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pv-claim
+  namespace: ##__NAMESPACE__##
   labels:
     app: nextcloud
 spec:
@@ -43,6 +46,7 @@ apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
   name: nextcloud-mysql
+  namespace: ##__NAMESPACE__##
   labels:
     app: nextcloud
 spec:

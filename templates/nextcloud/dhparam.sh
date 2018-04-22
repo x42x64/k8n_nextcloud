@@ -25,7 +25,8 @@ cat >dhparam-nginx.yaml <<EOL
 	    "kind": "Secret",
 	        "apiVersion": "v1",
 		    "metadata": {
-		            "name": "dhparam-nginx"
+		            "name": "dhparam-nginx",
+			    "namespace": "##__NAMESPACE__##"
 			        },
 				    "data": {
 				            "dhparam.pem": "$(cat ./dhparam.pem | base64 -w 0)"
