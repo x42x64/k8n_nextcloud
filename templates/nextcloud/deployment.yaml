@@ -35,8 +35,25 @@ spec:
           mountPath: /var/www/html/data
         - name: nextcloud-html
           mountPath: /var/www/html
+      - image: certbot/certbot
+        name: certbot
+        command: ["sleep"]
+        args: ["1d"]
+#        command: ["/bin/sh"]
+#        args:
+#        - -c
+#        - "certbot certonly --webroot -w /var/www/acme-challenge -d nextcloud.dev.martintim.com -d office.dev.martintim.com && while [ true ] ; do certbot renew --dry-run ; sleep 600s; done;"
+        volumeMounts:
+        - name: acmeChallenge
+          mountPath: /var/www/acme-challenge
+        - name: certs
+          mountPath: /etc/letsencrypt/live/
       - image: nginx:latest
         name: nginx
+        livenessProbe:
+          httpGet:
+            path: /.liveness
+            port: 80
         ports:
         - containerPort: 80
           name: nginx-http
@@ -57,11 +74,14 @@ spec:
           readOnly: true
         - name: nginx-config-map
           mountPath: /etc/nginx/conf.d/
-        - name: nginx-certs
-          mountPath: /etc/nginx/ssl/nextcloud.dev.martintim.com/
+        - name: certs
+          mountPath: /etc/nginx/ssl/certs/
           readOnly: true
         - name: dhparam
           mountPath: /etc/nginx/ssl/dhparam/
+          readOnly: true
+        - name: acmeChallenge
+          mountPath: /etc/nginx/ssl/acme-challenge/
           readOnly: true
         env:
         - name: MYSQL_ROOT_PASSWORD
@@ -102,6 +122,10 @@ spec:
       - name: nginx-certs
         secret:
           secretName: nextcloud-cert
+      - name: certs
+        emptyDir: {}
       - name: dhparam
         secret:
           secretName: dhparam-nginx
+      - name: acmeChallenge
+        emptyDir: {}
