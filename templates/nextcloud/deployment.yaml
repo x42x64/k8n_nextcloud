@@ -35,22 +35,61 @@ spec:
           mountPath: /var/www/html/data
         - name: nextcloud-html
           mountPath: /var/www/html
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: NEXTCLOUD_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-pass
+              key: password
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - bash
+              - "-c"
+              - |
+                sleep 45s
+                chsh -s /bin/bash www-data
+                chown -R www-data:www-data /var/www/html/
+                su www-data -c "php occ maintenance:install --database \"mysql\" --database-name \"nextcloud\"  --database-user \"root\" --database-pass $MYSQL_ROOT_PASSWORD --admin-user \"admin\" --admin-pass $NEXTCLOUD_ADMIN_PASSWORD --database-host \"nextcloud-mysql:3306\""
+                su www-data -c "php occ config:system:set trusted_domains 1 --value=##__DOMAIN1__##"
+                su www-data -c "php occ config:system:set trusted_domains 2 --value=##__DOMAIN2__##"
+                su www-data -c "php occ app:enable richdocuments"
+                su www-data -c "php occ config:app:set richdocuments wopi_url --value \"https://##__DOMAIN2__##\""
+                su www-data -c "php occ user:setting admin settings email \"##__EMAIL__##\""
       - image: certbot/certbot
         name: certbot
-        command: ["sleep"]
-        args: ["1d"]
-#        command: ["/bin/sh"]
+#        command: ["sleep"]
 #        args:
-#        - -c
-#        - "certbot certonly --webroot -w /var/www/acme-challenge -d nextcloud.dev.martintim.com -d office.dev.martintim.com && while [ true ] ; do certbot renew --dry-run ; sleep 600s; done;"
+#        - 30d
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "sleep 600s && certbot certonly --webroot --agree-tos --email ##__EMAIL__## -w /var/www/acme-challenge -d ##__DOMAIN1__## -d ##__DOMAIN2__## && cp -rL /etc/letsencrypt/live/* /etc/certs/ && while [ true ] ; do certbot renew ; cp -rL /etc/letsencrypt/live/* /etc/certs/; sleep 12h; done;"
         volumeMounts:
-        - name: acmeChallenge
+        - name: acme-challenge
           mountPath: /var/www/acme-challenge
         - name: certs
-          mountPath: /etc/letsencrypt/live/
+          mountPath: /etc/certs/
+        lifecycle:
+          postStart:
+            exec:
+              command: 
+              - "/bin/sh"
+              - "-c"
+              - | 
+                mkdir -p /etc/certs/##__DOMAIN1__##
+                openssl req -x509 -newkey rsa:4096 -keyout /etc/certs/##__DOMAIN1__##/privkey.pem -out /etc/certs/##__DOMAIN1__##/fullchain.pem -nodes -subj "/C=DE/ST=Bavaria/L=Munich/O=jmj-works.com/OU=nextcloud self signing/CN=##__DOMAIN1__##"
       - image: nginx:latest
         name: nginx
         livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 30
           httpGet:
             path: /.liveness
             port: 80
@@ -76,36 +115,17 @@ spec:
           mountPath: /etc/nginx/conf.d/
         - name: certs
           mountPath: /etc/nginx/ssl/certs/
-          readOnly: true
+          readOnly: false
         - name: dhparam
           mountPath: /etc/nginx/ssl/dhparam/
           readOnly: true
-        - name: acmeChallenge
+        - name: acme-challenge
           mountPath: /etc/nginx/ssl/acme-challenge/
           readOnly: true
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-pass
-              key: password
-        - name: NEXTCLOUD_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-pass
-              key: password
-        lifecycle:
-          postStart:
-            exec:
-              command:
-              - bash
-              - "-c"
-              - | 
-                sleep 15
-                whoami
-                echo $MYSQL_ROOT_PASSWORD
-                echo $NEXTCLOUD_ADMIN_PASSWORD                
-                www-data
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "nginx && sleep 660s && while [ true ] ; do nginx -s reload ; sleep 62m ; done ;"
       volumes:
       - name: nginx-config-map
         configMap:
@@ -119,13 +139,11 @@ spec:
           claimName: nextcloud-persistent-data
       - name: nextcloud-html
         emptyDir: {}
-      - name: nginx-certs
-        secret:
-          secretName: nextcloud-cert
-      - name: certs
-        emptyDir: {}
       - name: dhparam
         secret:
           secretName: dhparam-nginx
-      - name: acmeChallenge
+      - name: acme-challenge
         emptyDir: {}
+      - name: certs
+        emptyDir: 
+          medium: "Memory"

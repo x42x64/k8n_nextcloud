@@ -38,6 +38,9 @@ spec:
       containers:
       - image: collabora/code
         name: collabora
+        env:
+        - name: domain
+          value: "##__DOMAIN1__##"
         ports:
         - containerPort: 9980
           name: collabora
